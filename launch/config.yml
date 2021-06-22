@@ -19,9 +19,9 @@ relaychain:
     - name: charlie
 
 paras:
-- image: acala/karura-node:1.0.1
+- image: acala/karura-node:latest
   chain:
-    base: karura-latest
+    base: karura-dev
     collators:
       - alice
       - bob
