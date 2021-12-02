@@ -23,7 +23,7 @@ use crate::setup::*;
 
 use frame_support::assert_ok;
 
-use karura_runtime::AssetRegistry;
+use karura_runtime::{AssetRegistry, ZeroAccountId};
 use module_asset_registry::AssetMetadata;
 use orml_traits::MultiCurrency;
 use xcm_emulator::TestExt;
@@ -310,4 +310,13 @@ fn test_asset_registry_module() {
 			640_000_000
 		);
 	});
+}
+
+#[test]
+fn test_account() {
+	// 5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUpnhM
+	// https://polkadot.subscan.io/tools/format_transform?input=111111111111111111111111111111111HC1&type=All
+	// https://polkadot.subscan.io/account/111111111111111111111111111111111HC1
+	let zero = ZeroAccountId::get();
+	println!("{}", zero);
 }
