@@ -35,8 +35,8 @@ use module_support::{
 };
 use orml_traits::{parameter_type_with_key, MultiReservableCurrency};
 pub use primitives::{
-	define_combined_task, evm::EvmAddress, task::TaskResult, Amount, BlockNumber, CurrencyId, DexShare, Header, Nonce,
-	ReserveIdentifier, TokenSymbol, TradingPair,
+	convert_decimals_to_evm, define_combined_task, evm::EvmAddress, task::TaskResult, Amount, BlockNumber, CurrencyId,
+	DexShare, Header, Nonce, ReserveIdentifier, TokenSymbol, TradingPair,
 };
 use scale_info::TypeInfo;
 use sp_core::{crypto::AccountId32, H160, H256};
@@ -378,7 +378,8 @@ ord_parameter_types! {
 	pub const TreasuryAccount: AccountId32 = AccountId32::from([2u8; 32]);
 	pub const NetworkContractAccount: AccountId32 = AccountId32::from([0u8; 32]);
 	pub const NewContractExtraBytes: u32 = 100;
-	pub const StorageDepositPerByte: u64 = 10;
+	pub const StorageDepositPerByte: u128 = convert_decimals_to_evm(10);
+	pub const TxFeePerGas: u64 = 10;
 	pub const DeveloperDeposit: u64 = 1000;
 	pub const DeploymentFee: u64 = 200;
 	pub const ChainId: u64 = 1;
@@ -397,6 +398,7 @@ impl module_evm::Config for Test {
 	type TransferAll = Currencies;
 	type NewContractExtraBytes = NewContractExtraBytes;
 	type StorageDepositPerByte = StorageDepositPerByte;
+	type TxFeePerGas = TxFeePerGas;
 	type Event = Event;
 	type Precompiles = AllPrecompiles<Self>;
 	type ChainId = ChainId;

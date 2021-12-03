@@ -22,8 +22,9 @@ use frame_support::{
 	traits::{Everything, IsInVec},
 	weights::Weight,
 };
-use xcm_builder::{AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, TakeWeightCredit};
-use xcm_executor::{traits::*, Config, XcmExecutor};
+use karura_runtime::{KsmPerSecond, ZeroAccountId};
+use xcm_builder::{AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, FixedRateOfFungible, TakeWeightCredit};
+use xcm_executor::{traits::*, Assets, Config, XcmExecutor};
 
 #[test]
 fn currency_id_convert() {
@@ -539,4 +540,141 @@ fn test_native_token_can_not_use_tokens_module() {
 		// ACA、DOT 因为 ACA 是另外一条链，而 DOT 是另外一条中继链（而 KSM 可以，因为 karura 和
 		// kusama 是允许跨链通信的）
 	});
+}
+
+#[test]
+fn test_account() {
+	// 5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUpnhM
+	// https://polkadot.subscan.io/tools/format_transform?input=111111111111111111111111111111111HC1&type=All
+	// https://polkadot.subscan.io/account/111111111111111111111111111111111HC1
+	let zero = ZeroAccountId::get();
+	println!("{}", zero);
+}
+
+#[test]
+fn test_weight_fee_static() {
+	use frame_support::weights::constants::WEIGHT_PER_SECOND;
+	use karura_runtime::kar_per_second;
+
+	println!("kar_ps:{}", kar_per_second());
+
+	let weight = 100;
+	let amount = kar_per_second() * (weight as u128) / (WEIGHT_PER_SECOND as u128);
+	println!("amount:{}", amount);
+}
+
+#[cfg(feature = "with-karura-runtime")]
+#[test]
+fn test_fix_rate() {
+	let mut message = Xcm(vec![
+		ReserveAssetDeposited((Parent, 100).into()),
+		BuyExecution {
+			fees: (Parent, 100).into(),
+			weight_limit: Limited(100),
+		},
+		DepositAsset {
+			assets: All.into(),
+			max_assets: 1,
+			beneficiary: Here.into(),
+		},
+	]);
+
+	let expect_weight: Weight = 600_000_000;
+	let xcm_weight: Weight = <XcmConfig as Config>::Weigher::weight(&mut message).unwrap();
+	assert_eq!(xcm_weight, expect_weight);
+
+	// ksm: 0.16 * weight
+	let mock_weight: Weight = 100;
+	let asset: MultiAsset = (Parent, 100).into();
+	let expect_result: MultiAsset = (Parent, 84).into();
+	let assets: Assets = asset.into();
+	let mut trader = FixedRateOfFungible::<KsmPerSecond, ()>::new();
+	let assets =
+		<FixedRateOfFungible<KsmPerSecond, ()> as WeightTrader>::buy_weight(&mut trader, mock_weight, assets).unwrap();
+	let asset: Vec<MultiAsset> = assets.into();
+	assert_eq!(vec![expect_result], asset);
+
+	// 0.16 * 600_000_000 = 96_000_000
+	let asset: MultiAsset = (Parent, 96_000_000).into();
+	let assets: Assets = asset.into();
+	let mut trader = FixedRateOfFungible::<KsmPerSecond, ()>::new();
+	let assets =
+		<FixedRateOfFungible<KsmPerSecond, ()> as WeightTrader>::buy_weight(&mut trader, xcm_weight, assets).unwrap();
+	let asset: Vec<MultiAsset> = assets.into();
+	assert_eq!(asset, vec![]);
+
+	// 100_000_000 - 96_000_000 = 4_000_000
+	let asset: MultiAsset = (Parent, 100_000_000).into();
+	let expect_result: MultiAsset = (Parent, 4_000_000).into();
+	let assets: Assets = asset.into();
+	let mut trader = FixedRateOfFungible::<KsmPerSecond, ()>::new();
+	let assets =
+		<FixedRateOfFungible<KsmPerSecond, ()> as WeightTrader>::buy_weight(&mut trader, xcm_weight, assets).unwrap();
+	let asset: Vec<MultiAsset> = assets.into();
+	assert_eq!(vec![expect_result], asset);
+}
+
+// #[cfg(feature = "with-karura-runtime")]
+// mod karura_runtime_test {
+// 	use super::*;
+// use pallet_transaction_payment::InclusionFee;
+// use sp_runtime::traits::Extrinsic;
+//
+// #[test]
+// fn check_transaction_fee_for_empty_remark_karura() {
+// 	ExtBuilder::default().build().execute_with(|| {
+// 		let call = Call::System(frame_system::Call::remark { remark: vec![] });
+// 		let ext = UncheckedExtrinsic::new(call.into(), None).expect("This should not fail");
+// 		let bytes = ext.encode();
+// 		println!("remark:{:?}", hex::encode(bytes));
+//
+// 		// Get information on the fee for the call.
+// 		let fee = TransactionPayment::query_fee_details(ext, bytes.len() as u32);
+//
+// 		let InclusionFee {
+// 			base_fee,
+// 			len_fee,
+// 			adjusted_weight_fee,
+// 		} = fee.inclusion_fee.unwrap();
+//
+// 		// assert_eq!(base_fee, 1_000_000_000);
+// 		// assert_eq!(len_fee, 500_000_000);
+// 		// assert_eq!(adjusted_weight_fee, 4_592_000);
+// 		//
+// 		// let total_fee = base_fee.saturating_add(len_fee).saturating_add(adjusted_weight_fee);
+// 		// assert_eq!(total_fee, 1_504_592_000);
+// 		println!("fee:{}", fee.inclusion_fee);
+// 	});
+// }
+// }
+
+#[cfg(feature = "with-mandala-runtime")]
+mod mandala_only_tests {
+	use super::*;
+	use pallet_transaction_payment::InclusionFee;
+	use sp_runtime::traits::Extrinsic;
+	#[test]
+	fn check_transaction_fee_for_empty_remark() {
+		ExtBuilder::default().build().execute_with(|| {
+			let call = Call::System(frame_system::Call::remark { remark: vec![] });
+			let ext = UncheckedExtrinsic::new(call.into(), None).expect("This should not fail");
+			let bytes = ext.encode();
+
+			// Get information on the fee for the call.
+			let fee = TransactionPayment::query_fee_details(ext, bytes.len() as u32);
+
+			let InclusionFee {
+				base_fee,
+				len_fee,
+				adjusted_weight_fee,
+			} = fee.inclusion_fee.unwrap();
+
+			assert_eq!(base_fee, 1_000_000_000);
+			assert_eq!(len_fee, 500_000_000);
+			assert_eq!(adjusted_weight_fee, 4_592_000);
+
+			let total_fee = base_fee.saturating_add(len_fee).saturating_add(adjusted_weight_fee);
+			assert_eq!(total_fee, 1_504_592_000);
+		});
+	}
 }

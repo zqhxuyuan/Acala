@@ -1,6 +1,6 @@
 [package]
 name = "runtime-integration-tests"
-version = "2.0.2"
+version = "2.0.3"
 authors = ["Acala Developers"]
 edition = "2018"
 
@@ -136,7 +136,7 @@ xcm-emulator = { git = "https://github.com/shaunxw/xcm-simulator", rev = "4d3bb9
 acala-service = { path = "../../node/service", features = ["with-all-runtime"] }
 
 [features]
-default = ["std"]
+default = ["std", "with-karura-runtime"]
 no_std = []
 with-mandala-runtime = [
 	"acala-service/with-mandala-runtime",
