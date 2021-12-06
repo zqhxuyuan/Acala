@@ -30,10 +30,12 @@ use module_support::CallBuilder;
 use orml_traits::MultiCurrency;
 use xcm_emulator::TestExt;
 
+// R -> R -> A: reserve transfer
 #[test]
 fn transfer_from_relay_chain() {
+	env_logger::init();
 	KusamaNet::execute_with(|| {
-		assert_ok!(kusama_runtime::XcmPallet::reserve_transfer_assets(
+		assert_ok!(pallet_xcm::Pallet::<kusama_runtime::Runtime>::reserve_transfer_assets(
 			kusama_runtime::Origin::signed(ALICE.into()),
 			Box::new(Parachain(2000).into().into()),
 			Box::new(
@@ -54,10 +56,13 @@ fn transfer_from_relay_chain() {
 	});
 }
 
+// A -> R -> R: to reserve
 #[test]
 fn transfer_to_relay_chain() {
+	env_logger::init();
 	Karura::execute_with(|| {
-		assert_ok!(XTokens::transfer(
+		// assert_ok!(XTokens::transfer(
+		assert_ok!(orml_xtokens::Pallet::<Runtime>::transfer(
 			Origin::signed(ALICE.into()),
 			KSM,
 			dollar(KSM),

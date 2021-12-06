@@ -612,6 +612,34 @@ fn test_fix_rate() {
 		<FixedRateOfFungible<KsmPerSecond, ()> as WeightTrader>::buy_weight(&mut trader, xcm_weight, assets).unwrap();
 	let asset: Vec<MultiAsset> = assets.into();
 	assert_eq!(vec![expect_result], asset);
+
+	// 4 instructions
+	let mut message = Xcm(vec![
+		ReserveAssetDeposited((Parent, 100).into()),
+		ClearOrigin,
+		BuyExecution {
+			fees: (Parent, 100).into(),
+			weight_limit: Limited(100),
+		},
+		DepositAsset {
+			assets: All.into(),
+			max_assets: 1,
+			beneficiary: Here.into(),
+		},
+	]);
+	let expect_weight: Weight = 800_000_000;
+	let xcm_weight: Weight = <XcmConfig as Config>::Weigher::weight(&mut message).unwrap();
+	assert_eq!(xcm_weight, expect_weight);
+
+	// 0.16 * 800_000_000 = 128_000_000
+	let asset: MultiAsset = (Parent, 150_000_000).into();
+	let expect_result: MultiAsset = (Parent, 22_000_000).into();
+	let assets: Assets = asset.into();
+	let mut trader = FixedRateOfFungible::<KsmPerSecond, ()>::new();
+	let assets =
+		<FixedRateOfFungible<KsmPerSecond, ()> as WeightTrader>::buy_weight(&mut trader, xcm_weight, assets).unwrap();
+	let asset: Vec<MultiAsset> = assets.into();
+	assert_eq!(vec![expect_result], asset);
 }
 
 // #[cfg(feature = "with-karura-runtime")]
