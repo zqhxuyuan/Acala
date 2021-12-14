@@ -87,6 +87,13 @@ mod runtime;
 	feature = "with-karura-runtime",
 	feature = "with-acala-runtime"
 ))]
+mod tests;
+
+#[cfg(any(
+	feature = "with-mandala-runtime",
+	feature = "with-karura-runtime",
+	feature = "with-acala-runtime"
+))]
 mod session_manager;
 
 #[cfg(any(
