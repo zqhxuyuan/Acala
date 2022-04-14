@@ -14,6 +14,8 @@ hex = { version = "0.4", default-features = false }
 hex-literal = { version = "0.3.1" }
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
 libsecp256k1 = { version = "0.7", default-features = false, optional = true }
+#log = { version = "0.4.14", default-features = false }
+log = { version = "0.4.14" }
 
 # substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18", default-features = false, optional = true }
@@ -135,6 +137,8 @@ ecosystem-starport = { path = "../../ecosystem-modules/starport", default-featur
 ecosystem-compound-cash = { path = "../../ecosystem-modules/compound-cash", default-features = false }
 nutsfinance-stable-asset = { version = "0.1.0", default-features = false, path = "../../ecosystem-modules/stable-asset/lib/stable-asset", package = "nutsfinance-stable-asset" }
 
+#getrandom = { version = "0.2", features = ["js"], optional = true }
+
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.18" }
 
@@ -155,6 +159,7 @@ std = [
 	"codec/std",
 	"serde",
 	"hex/std",
+#	"log/std",
 	"serde_json/std",
 
 	"scale-info/std",

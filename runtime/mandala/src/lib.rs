@@ -1810,6 +1810,13 @@ impl Convert<(Call, SignedExtra), Result<(), InvalidTransaction>> for PayerSigna
 			payer_sig,
 		}) = call
 		{
+			// let dave_ed = sp_keyring::ed25519::Keyring::Dave;
+			// let dave = dave_ed.to_account_id();
+			// use sp_core::Pair;
+
+			// let (payer_pair, _) = sp_core::ed25519::Pair::from_phrase("bottom drive obey lake curtain smoke
+			// basket hold race lonely fit walk").unwrap(); sp_core::ed25519::Pair::from_string("payer");
+
 			let payer_account: [u8; 32] = payer_addr
 				.encode()
 				.as_slice()
@@ -1817,7 +1824,16 @@ impl Convert<(Call, SignedExtra), Result<(), InvalidTransaction>> for PayerSigna
 				.map_err(|_| InvalidTransaction::BadSigner)?;
 			// payer signature is aim at inner call of `with_fee_paid_by` call.
 			let raw_payload = SignedPayload::new(*call, extra).map_err(|_| InvalidTransaction::BadSigner)?;
-			if !raw_payload.using_encoded(|payload| payer_sig.verify(payload, &payer_account.into())) {
+
+			/// try print payer signature, to see if it's same with payer_sig parameters.
+			// let payer_signature = raw_payload.using_encoded(|payload| payer_pair.sign(payload));
+			// log::info!("payer signature:{:?}", payer_signature);
+			if !raw_payload.using_encoded(|payload| {
+				log::info!("payload encode:{}", hex::encode(payload));
+
+				payer_sig.verify(payload, &payer_account.into())
+				// payer_sig.verify(payload, &dave)
+			}) {
 				return Err(InvalidTransaction::BadProof);
 			}
 		}
@@ -2592,6 +2608,23 @@ mod tests {
 		// correct payer signature
 		new_test_ext().execute_with(|| {
 			let payer = sp_keyring::AccountKeyring::Charlie;
+			let dave_ed = sp_keyring::ed25519::Keyring::Dave;
+			let dave_ac = dave_ed.to_account_id();
+			println!("dave:{}", dave_ac);
+			// 5ECTwv6cZ5nJQPk6tWfaTrEk8YH2L7X1VT4EL5Tx2ikfFwb7
+
+			// 5Fn5imVPEvg6Sc6PihBRGdYNf7jxKqEhUS1LCMyDX5uz6KUx
+			let payer1 = sp_core::ed25519::Pair::from_string(
+				"bottom drive obey lake curtain smoke basket hold race lonely fit walk",
+				None,
+			)
+			.unwrap();
+
+			// bottom drive obey lake curtain smoke basket hold race lonely fit walk
+			// 5DFJF7tY4bpbpcKPJcBTQaKuCDEPCpiz8TRjpmLeTtweqmXL
+			// let (pair, seed) = sp_core::ed25519::Pair::from_phrase("bottom drive obey lake curtain smoke
+			// basket hold race lonely fit walk").unwrap(); println!("{}", pair.to_acc)
+			// pair.sign();
 
 			let call = Call::Balances(pallet_balances::Call::transfer {
 				dest: sp_runtime::MultiAddress::Id(sp_keyring::AccountKeyring::Bob.to_account_id()),
