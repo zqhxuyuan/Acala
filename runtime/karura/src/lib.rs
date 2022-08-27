@@ -85,6 +85,7 @@ pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::BuildStorage;
 
 pub use authority::AuthorityConfigImpl;
+pub use config::*;
 pub use constants::{fee::*, parachains, time::*};
 pub use primitives::{
 	currency::AssetIds,
@@ -116,6 +117,7 @@ pub use nutsfinance_stable_asset;
 
 mod authority;
 mod benchmarking;
+mod config;
 pub mod constants;
 /// Weights for pallets used in the runtime.
 mod weights;
@@ -823,11 +825,6 @@ parameter_type_with_key! {
 	};
 }
 
-parameter_types! {
-	pub StableCurrencyFixedPrice: Price = Price::saturating_from_rational(1, 1);
-	pub RewardRatePerRelaychainBlock: Rate = Rate::saturating_from_rational(3_068, 100_000_000_000u128);	// 17.5% annual staking reward rate of Kusama
-}
-
 impl module_prices::Config for Runtime {
 	type Event = Event;
 	type Source = AggregatedDataProvider;
@@ -950,12 +947,6 @@ impl pallet_preimage::Config for Runtime {
 	type ByteDeposit = PreimageByteDeposit;
 }
 
-parameter_types! {
-	pub MinimumIncrementSize: Rate = Rate::saturating_from_rational(2, 100);
-	pub const AuctionTimeToClose: BlockNumber = 15 * MINUTES;
-	pub const AuctionDurationSoftCap: BlockNumber = 2 * HOURS;
-}
-
 impl module_auction_manager::Config for Runtime {
 	type Event = Event;
 	type Currency = Currencies;
@@ -1038,15 +1029,6 @@ where
 {
 	type OverarchingCall = Call;
 	type Extrinsic = UncheckedExtrinsic;
-}
-
-parameter_types! {
-	pub DefaultLiquidationRatio: Ratio = Ratio::saturating_from_rational(150, 100);
-	pub DefaultDebitExchangeRate: ExchangeRate = ExchangeRate::saturating_from_rational(1, 10);
-	pub DefaultLiquidationPenalty: Rate = Rate::saturating_from_rational(8, 100);
-	pub MinimumDebitValue: Balance = 50 * dollar(KUSD);
-	pub MaxSwapSlippageCompareToOracle: Ratio = Ratio::saturating_from_rational(10, 100);
-	pub MaxLiquidationContractSlippage: Ratio = Ratio::saturating_from_rational(15, 100);
 }
 
 impl module_cdp_engine::Config for Runtime {
@@ -1244,11 +1226,6 @@ impl orml_rewards::Config for Runtime {
 	type PoolId = PoolId;
 	type CurrencyId = CurrencyId;
 	type Handler = Incentives;
-}
-
-parameter_types! {
-	pub const AccumulatePeriod: BlockNumber = MINUTES;
-	pub const EarnShareBooster: Permill = Permill::from_percent(30);
 }
 
 impl module_incentives::Config for Runtime {
@@ -1479,15 +1456,12 @@ impl parachain_info::Config for Runtime {}
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
-	pub DefaultExchangeRate: ExchangeRate = ExchangeRate::saturating_from_rational(1, 10);
 	pub HomaTreasuryAccount: AccountId = HomaTreasuryPalletId::get().into_account_truncating();
 	pub ActiveSubAccountsIndexList: Vec<u16> = vec![
 		0,  // HTAeD1dokCVs9MwnC1q9s2a7d2kQ52TAjrxE1y5mj5MFLLA
 		1,  // FDVu3RdH5WsE2yTdXN3QMq6v1XVDK8GKjhq5oFjXe8wZYpL
 		2,  // EMrKvFy7xLgzzdgruXT9oXERt553igEScqgSjoDm3GewPSA
 	];
-	pub MintThreshold: Balance = dollar(KSM);
-	pub RedeemThreshold: Balance = dollar(LKSM);
 }
 
 impl module_homa::Config for Runtime {

@@ -44,11 +44,7 @@ pub use crate::homa::*;
 pub use crate::honzon::*;
 pub use crate::incentives::*;
 pub use crate::stable_asset::*;
-
-pub type Price = FixedU128;
-pub type ExchangeRate = FixedU128;
-pub type Ratio = FixedU128;
-pub type Rate = FixedU128;
+pub use primitives::{ExchangeRate, Price, Rate, Ratio};
 
 pub trait PriceProvider<CurrencyId> {
 	fn get_price(currency_id: CurrencyId) -> Option<Price>;

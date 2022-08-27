@@ -34,7 +34,7 @@ use frame_support::{
 use frame_system::{limits, EnsureRoot};
 use module_evm::GenesisAccount;
 use orml_traits::GetByKey;
-use primitives::{evm::is_system_contract, Balance, CurrencyId, Nonce};
+use primitives::{evm::is_system_contract, Balance, BlockNumber, CurrencyId, Nonce};
 use scale_info::TypeInfo;
 use sp_core::{Bytes, H160};
 use sp_runtime::{traits::Convert, transaction_validity::TransactionPriority, Perbill};

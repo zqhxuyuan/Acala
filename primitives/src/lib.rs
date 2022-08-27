@@ -21,6 +21,7 @@
 #![allow(clippy::upper_case_acronyms)]
 
 pub mod bonding;
+pub mod config;
 pub mod currency;
 pub mod evm;
 pub mod nft;
@@ -198,3 +199,47 @@ pub type CashYieldIndex = u128;
 pub fn to_bytes<T: Into<U256>>(value: T) -> [u8; 32] {
 	Into::<[u8; 32]>::into(value.into())
 }
+
+// #[derive(Clone, Copy, Encode, Decode, RuntimeDebug, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
+// pub enum BalanceConfig<Balance> {
+// 	CdpMinDebitValue(Balance),
+//
+// 	HomaMintThreshold(Balance),
+// 	HomaRedeemThreshold(Balance),
+// }
+//
+// #[derive(Clone, Copy, Encode, Decode, RuntimeDebug, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
+// pub enum BlockNumberConfig<BlockNumber> {
+// 	IncentiveAccumulatePeriod(BlockNumber),
+// 	AuctionTimeToClose(BlockNumber),
+// 	AuctionDurationSoftCap(BlockNumber),
+// }
+//
+// #[derive(Clone, Copy, Encode, Decode, RuntimeDebug, PartialEq, Eq, MaxEncodedLen, TypeInfo)]
+// pub enum RateConfig<Rate> {
+// 	PriceRewardPerRelayBlock(Rate),
+//
+// 	AuctionMinIncrementSize(Rate),
+//
+// 	CdpDefaultLiquidation(Rate),
+// 	CdpDefaultDebitExchange(Rate),
+// 	CdpDefaultPenalty(Rate),
+// 	CdpMaxSwapSlippageCompareToOracle(Rate),
+// 	CdpMaxLiquidationSlippageContract(Rate),
+//
+// 	HomaDefaultExchange(Rate),
+//
+// 	IncentiveEarnShareBooster(Rate),
+// }
+//
+// pub trait GetRateConfig<Rate> {
+// 	fn get(config: RateConfig<Rate>) -> Rate;
+// }
+//
+// pub trait GetBalanceConfig<Balance> {
+// 	fn get(config: BalanceConfig<Balance>) -> Balance;
+// }
+//
+// pub trait GetBlockNumberConfig<BlockNumber> {
+// 	fn get(config: BlockNumberConfig<BlockNumber>) -> BlockNumber;
+// }
