@@ -257,6 +257,66 @@ fn statemine_reserve_transfer_ksm_to_karura_should_not_allowed() {
 }
 
 #[test]
+fn statemine_reserve_transfer_ksm_and_asset_to_karura_should_not_allowed() {
+	TestNet::reset();
+	env_logger::init();
+	let sibling_2000: AccountId = Sibling::from(2000).into_account_truncating();
+	let child_2000: AccountId = ParaId::from(2000).into_account_truncating();
+	let child_1000: AccountId = ParaId::from(1000).into_account_truncating();
+
+	KusamaNet::execute_with(|| {
+		assert_eq!(2 * UNIT, kusama_runtime::Balances::free_balance(&child_2000));
+		assert_eq!(0, kusama_runtime::Balances::free_balance(&child_1000));
+	});
+
+	mint_asset_on_statemine();
+
+	Statemine::execute_with(|| {
+		Balances::make_free_balance_be(&ALICE.into(), 2 * UNIT);
+		// Suppose reserve transfer can success, then dest chain(Karura) has a sibling sovereign account on
+		// source chain(Statemine).
+		Balances::make_free_balance_be(&sibling_2000, 2 * UNIT);
+
+		let asset1: MultiAsset = (X2(PalletInstance(50), GeneralIndex(ASSET_ID as u128)), UNIT).into();
+		let asset2: MultiAsset = (Parent, UNIT).into();
+		let multi_assets = MultiAssets::from(vec![asset1, asset2]);
+
+		assert_ok!(statemine_runtime::PolkadotXcm::reserve_transfer_assets(
+			statemine_runtime::Origin::signed(ALICE.into()),
+			// Unlike Statemine reserve transfer to relaychain is not allowed,
+			// Here Statemine reserve transfer to parachain. let's see what happened.
+			Box::new(MultiLocation::new(1, X1(Parachain(2000))).into()),
+			Box::new(
+				Junction::AccountId32 {
+					id: BOB,
+					network: NetworkId::Any
+				}
+				.into()
+				.into()
+			),
+			Box::new(multi_assets.into()),
+			0
+		));
+
+		// In sender xcm execution is successed, sender account is withdrawn.
+		assert_eq!(UNIT, statemine_runtime::Balances::free_balance(&AccountId::from(ALICE)));
+		// And sibling parachain sovereign account on Statemine deposited.
+		assert_eq!(3 * UNIT, statemine_runtime::Balances::free_balance(&sibling_2000));
+	});
+
+	KusamaNet::execute_with(|| {
+		assert_eq!(2 * UNIT, kusama_runtime::Balances::free_balance(&child_2000));
+		assert_eq!(0, kusama_runtime::Balances::free_balance(&child_1000));
+	});
+
+	// Xcm execution error on receiver: UntrustedReserveLocation.
+	// This means Karura not consider Statemine as reserve chain of KSM.
+	Karura::execute_with(|| {
+		assert_eq!(0, Tokens::free_balance(KSM, &AccountId::from(BOB)));
+	});
+}
+
+#[test]
 fn karura_transfer_ksm_to_statemine_should_not_allowed() {
 	TestNet::reset();
 	let child_2000: AccountId = ParaId::from(2000).into_account_truncating();
@@ -443,34 +503,16 @@ fn karura_transfer_asset_to_statemine(ksm_fee_amount: u128) {
 // Alice is using reserve transfer, and Statemine is indeed the reserve chain of USDT.
 // So the reserve transfer can success. On Karura side, USDT is consider as ForeignAsset.
 fn statemine_transfer_asset_to_karura() {
-	register_asset();
+	register_asset_on_karura();
 
 	let para_2000: AccountId = Sibling::from(2000).into_account_truncating();
+
+	mint_asset_on_statemine();
 
 	Statemine::execute_with(|| {
 		use statemine_runtime::*;
 
 		let origin = Origin::signed(ALICE.into());
-		Balances::make_free_balance_be(&ALICE.into(), TEN);
-		Balances::make_free_balance_be(&BOB.into(), UNIT);
-
-		// If using non root, create custom asset cost 0.1 KSM
-		// We're using force_create here to make sure asset is sufficient.
-		assert_ok!(Assets::force_create(
-			Origin::root(),
-			ASSET_ID,
-			MultiAddress::Id(ALICE.into()),
-			true,
-			UNIT / 100
-		));
-
-		assert_ok!(Assets::mint(
-			origin.clone(),
-			ASSET_ID,
-			MultiAddress::Id(ALICE.into()),
-			1000 * UNIT
-		));
-
 		// need to have some KSM to be able to receive user assets
 		Balances::make_free_balance_be(&para_2000, UNIT);
 
@@ -501,7 +543,34 @@ fn statemine_transfer_asset_to_karura() {
 	Statemine::execute_with(|| {});
 }
 
-fn register_asset() {
+fn mint_asset_on_statemine() {
+	Statemine::execute_with(|| {
+		use statemine_runtime::*;
+
+		let origin = Origin::signed(ALICE.into());
+		Balances::make_free_balance_be(&ALICE.into(), TEN);
+		Balances::make_free_balance_be(&BOB.into(), UNIT);
+
+		// If using non root, create custom asset cost 0.1 KSM
+		// We're using force_create here to make sure asset is sufficient.
+		assert_ok!(Assets::force_create(
+			Origin::root(),
+			ASSET_ID,
+			MultiAddress::Id(ALICE.into()),
+			true,
+			UNIT / 100
+		));
+
+		assert_ok!(Assets::mint(
+			origin.clone(),
+			ASSET_ID,
+			MultiAddress::Id(ALICE.into()),
+			1000 * UNIT
+		));
+	});
+}
+
+fn register_asset_on_karura() {
 	Karura::execute_with(|| {
 		// register foreign asset
 		assert_ok!(AssetRegistry::register_foreign_asset(
